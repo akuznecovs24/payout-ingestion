@@ -7,5 +7,6 @@ import java.util.Optional;
 public interface CountryPayoutSource {
 
     String countryCode();
+
     Optional<SourcePayload> fetch();
 }

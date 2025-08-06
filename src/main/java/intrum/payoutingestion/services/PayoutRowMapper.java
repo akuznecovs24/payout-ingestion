@@ -24,5 +24,4 @@ public class PayoutRowMapper {
             return Optional.empty();
         }
     }
-
 }

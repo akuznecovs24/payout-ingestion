@@ -14,8 +14,10 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
+import org.springframework.stereotype.Component;
 
 @Slf4j
+@Component
 @RequiredArgsConstructor
 public class WakandaPayoutParser implements CountryPayoutParser {
 
@@ -28,8 +30,8 @@ public class WakandaPayoutParser implements CountryPayoutParser {
     private final PayoutRowMapper payoutRowMapper;
 
     @Override
-    public boolean canParse(File file) {
-        return file.getName().startsWith("WK_payouts");
+    public String countryCode() {
+        return "WK";
     }
 
     @Override
@@ -44,7 +46,7 @@ public class WakandaPayoutParser implements CountryPayoutParser {
                 .build();
 
         try (
-                var csvMessage = csvFormat.parse(new InputStreamReader(payload.inputStream(), StandardCharsets.UTF_8));
+                var csvMessage = csvFormat.parse(new InputStreamReader(payload.inputStream(), StandardCharsets.ISO_8859_1));
 
         ) {
             csvMessage.forEach(record ->
