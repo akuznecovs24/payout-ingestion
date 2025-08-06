@@ -4,14 +4,11 @@ import intrum.payoutingestion.exception.ServiceErrorException;
 import intrum.payoutingestion.model.SourcePayload;
 import intrum.payoutingestion.parsers.CountryPayoutParser;
 import intrum.payoutingestion.source.CountryPayoutSource;
-import jakarta.annotation.Nonnull;
 import jakarta.annotation.PostConstruct;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -23,7 +20,7 @@ public class PayoutProcessor {
     private final Map<String, CountryPayoutParser> parserMap;
     private final PayoutSender sender;
 
-//    @Scheduled(cron = "0 0 0 * * *")
+    //    @Scheduled(cron = "0 0 0 * * *")
     @PostConstruct
     public void process() {
         sources.forEach(this::handleSource);

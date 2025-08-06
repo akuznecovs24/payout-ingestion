@@ -4,8 +4,6 @@ import intrum.payoutingestion.exception.ServiceErrorException;
 import intrum.payoutingestion.model.PayoutRecord;
 import intrum.payoutingestion.model.SourcePayload;
 import intrum.payoutingestion.services.PayoutRowMapper;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -46,8 +44,7 @@ public class WakandaPayoutParser implements CountryPayoutParser {
                 .build();
 
         try (
-                var csvMessage = csvFormat.parse(new InputStreamReader(payload.inputStream(), StandardCharsets.ISO_8859_1));
-
+                var csvMessage = csvFormat.parse(new InputStreamReader(payload.inputStream(), StandardCharsets.ISO_8859_1))
         ) {
             csvMessage.forEach(record ->
                     payoutRowMapper.mapRow(record.get(ID), record.get(DATE), record.get(AMOUNT))
