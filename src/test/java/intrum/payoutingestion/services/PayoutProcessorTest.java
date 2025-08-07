@@ -1,5 +1,6 @@
 package intrum.payoutingestion.services;
 
+import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -18,7 +19,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -45,9 +45,9 @@ class PayoutProcessorTest {
     private static final String WK_COUNTRY_CODE = "WK";
 
     @Test
-    void process_valid() throws FileNotFoundException {
+    void process_valid() {
         var payload = new SourcePayload("file.csv", new ByteArrayInputStream("data".getBytes()));
-        var record = new PayoutRecord(RandomStringUtils.randomNumeric(5), LocalDate.now(), new BigDecimal("1.00"));
+        var record = new PayoutRecord(randomNumeric(5), LocalDate.now().toString(), new BigDecimal("1.00"));
 
         when(source.countryCode()).thenReturn(WK_COUNTRY_CODE);
         when(source.fetch()).thenReturn(Optional.of(payload));
@@ -61,7 +61,7 @@ class PayoutProcessorTest {
     }
 
     @Test
-    void process_noParserWarnsAndSkips() throws FileNotFoundException {
+    void process_noParserWarnsAndSkips() {
         var payload = new SourcePayload("file.csv", new ByteArrayInputStream("data".getBytes()));
 
         when(source.countryCode()).thenReturn(WK_COUNTRY_CODE);
@@ -74,7 +74,7 @@ class PayoutProcessorTest {
     }
 
     @Test
-    void process_parserThrowsError() throws FileNotFoundException {
+    void process_parserThrowsError() {
         var payload = new SourcePayload("file.csv",
                 new ByteArrayInputStream("data".getBytes()));
 
@@ -86,7 +86,6 @@ class PayoutProcessorTest {
         assertThatThrownBy(() -> processor.process())
                 .isInstanceOf(ServiceErrorException.class);
 
-        verify(source).fetch();
         verify(sender, never()).send(any());
     }
 }

@@ -3,24 +3,29 @@ package intrum.payoutingestion.services;
 import intrum.payoutingestion.model.PayoutRecord;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class PayoutRowMapper {
 
-    public Optional<PayoutRecord> mapRow(String companyId, String paymentDateRow, String amountRow) {
-        if (Stream.of(companyId, paymentDateRow, amountRow)
+    private static final DateTimeFormatter ISO = DateTimeFormatter.ISO_LOCAL_DATE;
+
+    public Optional<PayoutRecord> mapRow(String id, String dateRow, String amountRow) {
+        if (Stream.of(id, dateRow, amountRow)
                 .anyMatch(s -> s == null || s.isBlank())) {
             return Optional.empty();
         }
 
         try {
-            var paymentDate = LocalDate.parse(paymentDateRow.trim());
+            LocalDate.parse(dateRow.trim(), ISO);
             var amount = new BigDecimal(amountRow.trim().replaceAll(",", "."));
-            return Optional.of(new PayoutRecord(companyId.trim(), paymentDate, amount));
-        } catch (Exception e) {
+            return Optional.of(new PayoutRecord(id.trim(), dateRow.trim(), amount));
+        } catch (Exception ex) {
             return Optional.empty();
         }
     }

@@ -1,34 +1,32 @@
 package intrum.payoutingestion.controller;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import intrum.payoutingestion.services.PayoutProcessor;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(PayoutController.class)
 class PayoutControllerTest {
 
-    @Mock
-    private PayoutProcessor payoutProcessor;
+    @MockitoBean
+    PayoutProcessor payoutProcessor;   // подменяем сервис
 
-    @InjectMocks
-    private PayoutController payoutController;
+    @Autowired
+    MockMvc mvc;
 
     @Test
-    void triggerProcessing() {
-        doNothing().when(payoutProcessor).process();
-
-        var response = payoutController.triggerProcessing();
+    void triggerProcessing_valid() throws Exception {
+        mvc.perform(post("/api/payout/process"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Payout processing triggered successfully"));
 
         verify(payoutProcessor).process();
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo("Payout processing triggered successfully");
     }
 }

@@ -20,6 +20,7 @@ public class PayoutController {
     public ResponseEntity<String> triggerProcessing() {
         log.info("Manual trigger of payout processing");
         payoutProcessor.process();
+        log.info("Payout processing triggered successfully");
         return ResponseEntity.ok("Payout processing triggered successfully");
     }
 }

@@ -77,7 +77,7 @@ class WakandaSourceTest {
     }
 
     @Test
-    void fetch_multipleFiles_returnsLatest() throws Exception {
+    void fetch_multipleFilesReturnsLatest() throws Exception {
         var yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.BASIC_ISO_DATE);
 
         Files.writeString(temp.resolve("WK_payouts_%s_100000.csv".formatted(yesterday)), "a");

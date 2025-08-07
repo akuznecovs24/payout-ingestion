@@ -48,7 +48,7 @@ public class WakandaPayoutParser implements CountryPayoutParser {
         ) {
             csvMessage.forEach(record ->
                     payoutRowMapper.mapRow(record.get(ID), record.get(DATE), record.get(AMOUNT))
-                            .ifPresent(payouts::add));
+                            .ifPresentOrElse(payouts::add, () -> log.warn("Invalid record {}", record)));
         } catch (IOException e) {
             log.error("Error while reading file {}", payload.name(), e);
             throw new ServiceErrorException("Error while reading file " + e);

@@ -4,11 +4,11 @@ import intrum.payoutingestion.exception.ServiceErrorException;
 import intrum.payoutingestion.model.SourcePayload;
 import intrum.payoutingestion.parsers.CountryPayoutParser;
 import intrum.payoutingestion.source.CountryPayoutSource;
-import jakarta.annotation.PostConstruct;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -20,32 +20,34 @@ public class PayoutProcessor {
     private final Map<String, CountryPayoutParser> parserMap;
     private final PayoutSender sender;
 
-    //    @Scheduled(cron = "0 0 0 * * *")
-    @PostConstruct
+    @Scheduled(cron = "0 30 0 * * *")
     public void process() {
-        sources.forEach(this::handleSource);
-    }
-
-    private void handleSource(CountryPayoutSource source) {
-        var fetchedPayload = source.fetch();
-
-        //TODO handle errors here - try catch
-        fetchedPayload.ifPresent(payload -> handlePayload(source, payload));
+        for (var source : sources) {
+            try {
+                source.fetch().ifPresent(payload -> handlePayload(source, payload));
+            } catch (Exception ex) {
+                log.error("Fetch failed for {}, error: {}", source.countryCode(), ex.getMessage(), ex);
+                throw new ServiceErrorException("Fetch failed for %s".formatted(source.countryCode()), ex);
+            }
+        }
     }
 
     private void handlePayload(CountryPayoutSource source, SourcePayload payload) {
         var parser = parserMap.get(source.countryCode());
 
         if (parser == null) {
-            log.warn("No parser registered for country {}", source.countryCode());
+            log.warn("No parser for {}", source.countryCode());
             return;
         }
 
-        try {
-            parser.parse(payload).forEach(sender::send);
-        } catch (Exception ex) {
-            log.error("Parse failed for {}, error: {}", payload.name(), ex.getMessage(), ex);
-            throw new ServiceErrorException("Parse failed for %s".formatted(payload.name()), ex);
-        }
+        var records = parser.parse(payload);
+
+        records.forEach(record -> {
+            try {
+                sender.send(record);
+            } catch (Exception ex) {
+                log.error("Send failed {}", record.companyIdentityNumber(), ex);
+            }
+        });
     }
 }
