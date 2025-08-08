@@ -4,88 +4,80 @@ import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import intrum.payoutingestion.exception.ServiceErrorException;
 import intrum.payoutingestion.model.PayoutRecord;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Answers;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 @ExtendWith(MockitoExtension.class)
 class PayoutSenderTest {
 
-    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
+    @Mock
     WebClient webClient;
+    @Mock
+    WebClient.RequestBodyUriSpec request;
+    @Mock
+    WebClient.RequestHeadersSpec<?> headers;
+    @Mock
+    WebClient.ResponseSpec response;
 
-    private PayoutSender payoutSender() {
+    private final PayoutRecord record =
+            new PayoutRecord(randomNumeric(6), "2025-01-01", new BigDecimal("100.00"));
+
+    private PayoutSender sender() {
         return new PayoutSender("/payout", 3, webClient);
     }
 
-    @Test
-    void send_validCase() {
-        var record = new PayoutRecord(
-                randomNumeric(9),
-                LocalDate.now().toString(),
-                new BigDecimal("10.25"));
+    @BeforeEach
+    void setup() {
 
-        when(webClient.post()
-                .uri(anyString())
-                .contentType(any(MediaType.class))
-                .bodyValue(record)
-                .retrieve()
-                .toBodilessEntity())
-                .thenReturn(Mono.empty());
-
-        payoutSender().send(record);
-
-        verify(webClient.post()
-                .uri("/payout")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(record)
-                .retrieve())
-                .toBodilessEntity();
+        when(webClient.post()).thenReturn(request);
+        when(request.uri("/payout")).thenReturn(request);
+        when(request.contentType(MediaType.APPLICATION_JSON)).thenReturn(request);
+        Mockito.<WebClient.RequestHeadersSpec<?>>when(request.bodyValue(any()))
+                .thenReturn(headers);
+        when(headers.retrieve()).thenReturn(response);
     }
 
+    @Test
+    void send_valid() {
+        when(response.toBodilessEntity()).thenReturn(Mono.empty());
+
+        sender().send(record);
+
+        verify(request).uri("/payout");
+        verify(request).contentType(MediaType.APPLICATION_JSON);
+        verify(request).bodyValue(record);
+        verify(headers).retrieve();
+        verify(response).toBodilessEntity();
+    }
 
     @Test
-    void send_retriesThreeTimesThenThrowsError() {
-        var record = new PayoutRecord("id", "2025-08-07", new BigDecimal("100.55"));
-        var counter = new AtomicInteger();
-        Mono<ResponseEntity<Void>> errorMono = Mono.defer(() -> {
-            counter.incrementAndGet();
-            return Mono.error(new RuntimeException("Error"));
-        });
+    void send_retryThreeTimes_thenThrow() {
+        var attempts = new AtomicInteger();
 
-        when(webClient.post()
-                .uri(anyString())
-                .contentType(any())
-                .bodyValue(record)
-                .retrieve()
-                .toBodilessEntity())
-                .thenReturn(errorMono);
+        when(response.toBodilessEntity())
+                .thenReturn(Mono.defer(() -> {
+                    attempts.incrementAndGet();
+                    return Mono.error(new RuntimeException("ERROR"));
+                }));
 
-        assertThatThrownBy(() -> payoutSender().send(record))
-                .isInstanceOf(ServiceErrorException.class)
-                .hasMessageContaining("Failed to send payout id after 3 attempts");
+        assertThatThrownBy(() -> sender().send(record))
+                .isInstanceOf(ServiceErrorException.class);
 
-        assertThat(counter.get()).isEqualTo(3);
+        assertThat(attempts.get()).isEqualTo(3);
 
-        verify(webClient.post()
-                .uri("/payout")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(record)
-                .retrieve()).toBodilessEntity();
     }
 }

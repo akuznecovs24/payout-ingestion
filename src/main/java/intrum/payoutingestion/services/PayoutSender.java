@@ -20,7 +20,7 @@ public class PayoutSender {
     private final WebClient webClient;
 
     @Autowired
-    public PayoutSender(@Value("${payout.api.uri}") String url, @Value("${payout.api.max-attempts}") int maxAttempts, WebClient webClient) {
+    public PayoutSender(@Value("${payout.api.url}") String url, @Value("${payout.api.max-attempts}") int maxAttempts, WebClient webClient) {
         this.url = url;
         this.maxAttempts = maxAttempts;
         this.webClient = webClient;

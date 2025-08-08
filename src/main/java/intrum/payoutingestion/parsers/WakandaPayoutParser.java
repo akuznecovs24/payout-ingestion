@@ -40,6 +40,7 @@ public class WakandaPayoutParser implements CountryPayoutParser {
                 .setDelimiter(DELIMITER)
                 .setQuote(QUOTE)
                 .setHeader()
+                .setAllowMissingColumnNames(true)
                 .setSkipHeaderRecord(true)
                 .build();
 
