@@ -17,8 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-@Component
 @Slf4j
+@Component
 public class WakandaSource implements CountryPayoutSource {
 
     private static final Pattern WK_PATTERN = Pattern.compile("^WK_payouts_(\\d{8})_(\\d{6})\\.csv$");

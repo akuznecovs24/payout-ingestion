@@ -16,7 +16,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Answers;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
@@ -30,8 +29,9 @@ class PayoutSenderTest {
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     WebClient webClient;
 
-    @InjectMocks
-    PayoutSender sender;
+    private PayoutSender payoutSender() {
+        return new PayoutSender("/payout", 3, webClient);
+    }
 
     @Test
     void send_validCase() {
@@ -48,7 +48,7 @@ class PayoutSenderTest {
                 .toBodilessEntity())
                 .thenReturn(Mono.empty());
 
-        sender.send(record);
+        payoutSender().send(record);
 
         verify(webClient.post()
                 .uri("/payout")
@@ -76,7 +76,7 @@ class PayoutSenderTest {
                 .toBodilessEntity())
                 .thenReturn(errorMono);
 
-        assertThatThrownBy(() -> sender.send(record))
+        assertThatThrownBy(() -> payoutSender().send(record))
                 .isInstanceOf(ServiceErrorException.class)
                 .hasMessageContaining("Failed to send payout id after 3 attempts");
 
